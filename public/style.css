@@ -115,6 +115,7 @@
   height: 60px;
   object-fit: cover;
 }
+
 .personal .right .skill p {
   text-align: left;
 }
@@ -251,6 +252,10 @@ select {
   border: none;
   color: #fff;
   cursor: pointer;
+}
+
+.blog-content .button-group button {
+  border: none;
 }
 
 /* Blog list */
