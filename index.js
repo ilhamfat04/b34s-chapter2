@@ -1,6 +1,9 @@
 // pemanggilan package express
 const express = require('express')
 
+// import db connection
+const db = require('./connection/db')
+
 // menggunakan package express
 const app = express()
 
@@ -14,15 +17,6 @@ app.use(express.urlencoded({ extended: false }))
 
 // request = client -> server
 // response = server -> client
-
-const blogs = [
-    {
-        title: 'Pasar Coding di Indonesia Dinilai Masih Menjanjikan',
-        content: 'Ketimpangan sumber daya manusia (SDM) di sektor digital masih menjadi isu yang belum terpecahkan. Berdasarkan penelitian ManpowerGroup, ketimpangan SDM global, termasuk Indonesia, meningkat dua kali lipat dalam satu dekade terakhir. Lorem ipsum, dolor sit amet consectetur adipisicing elit. Quam, molestiae numquam! Deleniti maiores expedita eaque deserunt quaerat! Dicta, eligendi debitis?',
-        author: 'Ichsan Emrald Alamsyah',
-        posted_at: '25 April 2022 9:30 WIB'
-    }
-]
 
 const month = [
     'Januari',
@@ -39,7 +33,7 @@ const month = [
     'Desember'
 ]
 
-const isLogin = false
+const isLogin = true
 
 // endpoint
 app.get('/', function (req, res) {
@@ -51,20 +45,29 @@ app.get('/contact-me', function (req, res) {
 })
 
 app.get('/blog', function (req, res) {
-    // console.log(blogs);
+    let query = `SELECT * FROM tb_blog;`
 
-    // map = akses indeks array
-    // spread opr = memanipulasi object setiap indeks
-    let dataBlogs = blogs.map(function (data) {
-        // console.log(data);
-        return {
-            ...data,
-            isLogin: isLogin
-        }
+    db.connect((err, client, done) => {
+        if (err) throw err
+
+        client.query(query, (err, result) => {
+            done()
+
+            if (err) throw err
+
+            let data = result.rows
+
+            data = data.map((blog) => {
+                return {
+                    ...blog,
+                    posted_at: getFullTime(blog.posted_at),
+                    isLogin: isLogin
+                }
+            })
+
+            res.render('blog', { isLogin: isLogin, blog: data })
+        })
     })
-
-    // console.log(dataBlogs);
-    res.render('blog', { isLogin: isLogin, blog: dataBlogs })
 })
 
 app.get('/add-blog', function (req, res) {
