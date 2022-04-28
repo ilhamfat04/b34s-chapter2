@@ -45,7 +45,7 @@ app.get('/contact-me', function (req, res) {
 })
 
 app.get('/blog', function (req, res) {
-    let query = `SELECT * FROM tb_blog;`
+    let query = `SELECT * FROM tb_blog ORDER BY id DESC`
 
     db.connect((err, client, done) => {
         if (err) throw err
@@ -77,18 +77,25 @@ app.get('/add-blog', function (req, res) {
 app.post('/blog', function (req, res) {
     let title = req.body.title
     let content = req.body.content
-    let date = new Date()
 
     let blog = {
         title: title,
         content: content,
-        author: "Ichsan Emrald Alamsyah",
-        posted_at: getFullTime(date)
+        image: 'image.png'
     }
 
-    blogs.push(blog)
+    db.connect((err, client, done) => {
+        if (err) throw err
 
-    res.redirect('/blog')
+        let query = `INSERT INTO tb_blog(title, content, image) VALUES
+                        ('${blog.title}','${blog.content}','${blog.image}')`
+        client.query(query, (err, result) => {
+            done()
+            if (err) throw err
+
+            res.redirect('/blog')
+        })
+    })
 })
 
 app.get('/delete-blog/:id', function (req, res) {
@@ -98,25 +105,76 @@ app.get('/delete-blog/:id', function (req, res) {
         return res.redirect('/blog')
     }
 
-    blogs.splice(id, 1)
+    db.connect((err, client, done) => {
+        if (err) throw err
 
-    res.redirect('/blog')
+        let query = `DELETE FROM tb_blog WHERE id=${id}`
 
+        client.query(query, (err, result) => {
+            done()
+            if (err) throw err
 
+            res.redirect('/blog')
+        })
+    })
 })
 
 app.get('/edit-blog/:id', function (req, res) {
     let id = req.params.id
 
-    let blog = blogs[id]
-    console.log(blog);
+    console.log(id)
 
-    res.render('edit-blog', { dataId: id, blog })
+    db.connect((err, client, done) => {
+        if (err) throw err
+
+        let query = `SELECT * FROM tb_blog WHERE id=${id}`
+        client.query(query, (err, result) => {
+            done()
+            if (err) throw err
+
+            result = result.rows[0]
+            res.render('edit-blog', { blog: result })
+        })
+    })
+
+})
+
+app.post('/edit-blog/:id', function (req, res) {
+    let id = req.params.id
+
+    let title = req.body.title
+    let content = req.body.content
+
+    db.connect((err, client, done) => {
+        if (err) throw err
+
+        let query = `UPDATE tb_blog SET title='${title}', content='${content}' WHERE id=${id}`
+
+        client.query(query, (err, result) => {
+            done()
+            if (err) throw err
+
+            res.redirect('/blog')
+        })
+    })
 })
 
 app.get('/blog/:id', function (req, res) {
     let id = req.params.id
-    res.render('blog-detail', { dataId: id })
+
+    db.connect((err, client, done) => {
+        if (err) throw err
+
+        let query = `SELECT * FROM tb_blog WHERE id=${id}`
+        client.query(query, (err, result) => {
+            done()
+            if (err) throw err
+
+            result = result.rows[0]
+            console.log(result);
+            res.render('blog-detail', { blog: result })
+        })
+    })
 })
 
 const port = 5000
@@ -126,7 +184,7 @@ app.listen(port, function () {
 
 function getFullTime(time) {
     // merubah format waktu -> butuh waktu yang akan diubah
-    console.log(time)
+    // console.log(time)
 
     const date = time.getDate()
     const monthIndex = time.getMonth()

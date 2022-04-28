@@ -48,14 +48,14 @@
       <div class="blog-content">
         <div class="button-group">
           <button>
-            <a class="btn-edit" href="/edit-blog/{{@index}}">Edit Post</a>
+            <a class="btn-edit" href="/edit-blog/{{this.id}}">Edit Post</a>
           </button>
           <button>
-            <a class="btn-post" href="/delete-blog/{{@index}}">Delete Blog</a>
+            <a class="btn-post" href="/delete-blog/{{this.id}}">Delete Blog</a>
           </button>
         </div>
         <h1>
-          <a href="/blog/29" target="_blank">
+          <a href="/blog/{{this.id}}" target="_blank">
             {{this.title}}
           </a>
         </h1>

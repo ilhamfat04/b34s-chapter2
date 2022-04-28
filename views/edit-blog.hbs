@@ -31,15 +31,15 @@
         </div>
     </nav>
 
-    <form class="form-container" action="/blog" method="POST">
-        <h1>Create Post Blog</h1>
+    <form class="form-container" action="/edit-blog/{{blog.id}}" method="POST">
+        <h1>Edit Post Blog</h1>
         <div>
             <label for="input-title" class="form-label">Title</label>
-            <input id="input-title" name="title" class="form-control" value="{{blogs.title}}" />
+            <input id="input-title" name="title" class="form-control" value="{{blog.title}}" />
         </div>
         <div>
             <label for="input-content" class="form-label">Content</label>
-            <textarea id="input-content" name="content" class="form-control"></textarea>
+            <textarea id="input-content" name="content" class="form-control">{{blog.content}}</textarea>
         </div>
         <div>
             <label for="input-image" class="form-label">Upload Image</label>
