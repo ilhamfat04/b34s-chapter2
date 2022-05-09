@@ -1,5 +1,13 @@
 // pemanggilan package express
 const express = require('express')
+const { redirect } = require('express/lib/response')
+
+// import package bcrypt
+const bcrypt = require('bcrypt');
+
+// import package express-session and express-flash
+const flash = require('express-flash')
+const session = require('express-session')
 
 // import db connection
 const db = require('./connection/db')
@@ -14,6 +22,24 @@ app.set('view engine', 'hbs')
 app.use('/public', express.static(__dirname + '/public'))
 // set body parser
 app.use(express.urlencoded({ extended: false }))
+
+// use express-flash
+app.use(flash())
+
+// setup session middleware
+app.use(
+    session({
+        cookie: {
+            httpOnly: true,
+            secure: false,
+            maxAge: 1000 * 60 * 60 * 2
+        },
+        store: new session.MemoryStore(),
+        saveUninitialized: true,
+        resave: false,
+        secret: 'secretValue'
+    })
+)
 
 // request = client -> server
 // response = server -> client
@@ -33,11 +59,14 @@ const month = [
     'Desember'
 ]
 
-const isLogin = true
 
 // endpoint
 app.get('/', function (req, res) {
-    res.render('index', { title: "My Web" })
+    res.render('index', {
+        title: "My Web",
+        isLogin: req.session.isLogin,
+        user: req.session.user
+    })
 })
 
 app.get('/contact-me', function (req, res) {
@@ -61,11 +90,15 @@ app.get('/blog', function (req, res) {
                 return {
                     ...blog,
                     posted_at: getFullTime(blog.posted_at),
-                    isLogin: isLogin
+                    isLogin: req.session.isLogin
                 }
             })
 
-            res.render('blog', { isLogin: isLogin, blog: data })
+            res.render('blog', {
+                isLogin: req.session.isLogin,
+                user: req.session.user,
+                blog: data
+            })
         })
     })
 })
@@ -175,6 +208,81 @@ app.get('/blog/:id', function (req, res) {
             res.render('blog-detail', { blog: result })
         })
     })
+})
+
+app.get('/register', function (req, res) {
+    res.render('register')
+})
+
+app.post('/register', function (req, res) {
+    // const name = req.body.name
+    // const email = req.body.email
+    // const password = req.body.password
+
+    const { name, email, password } = req.body
+
+    const hash = bcrypt.hashSync(password, 10);
+
+    db.connect((err, client, done) => {
+        if (err) throw err
+
+        let query = `INSERT INTO tb_user(name, email, password) 
+                        VALUES('${name}','${email}','${hash}')`
+
+        client.query(query, (err, result) => {
+            done()
+            if (err) throw err
+
+            req.flash('success', 'Your account successfully registered')
+            res.redirect('/login')
+        })
+    })
+})
+
+app.get('/login', function (req, res) {
+    res.render('login')
+})
+
+app.post('/login', function (req, res) {
+    const { email, password } = req.body
+
+    db.connect((err, client, done) => {
+        if (err) throw err
+
+        let query = `SELECT * FROM tb_user WHERE email='${email}'`
+
+        client.query(query, (err, result) => {
+            done()
+            if (err) throw err
+
+            if (result.rowCount == 0) {
+                req.flash('danger', 'account not found')
+                return res.redirect('/login')
+            }
+
+            let isMatch = bcrypt.compareSync(password, result.rows[0].password);
+
+            if (isMatch) {
+                req.session.isLogin = true
+                req.session.user = {
+                    id: result.rows[0].id,
+                    name: result.rows[0].name,
+                    email: result.rows[0].email,
+                }
+
+                req.flash('success', 'Login success')
+                res.redirect('/blog')
+            } else {
+                req.flash('danger', 'Password doesnt match with your account')
+                res.redirect('/login')
+            }
+        })
+    })
+})
+
+app.get('/logout', function (req, res) {
+    req.session.destroy()
+    res.redirect('/')
 })
 
 const port = 5000
