@@ -72,9 +72,10 @@
     {{#each blog}}
     <div class="blog-list-item">
       <div class="blog-image">
-        <img src="/public/assets/blog-img.png" alt="Pasar Coding di Indonesia Dinilai Masih Menjanjikan" />
+        <img src="/uploads/{{this.image}}" alt="Pasar Coding di Indonesia Dinilai Masih Menjanjikan" />
       </div>
       <div class="blog-content">
+        {{#if isLogin}}
         <div class="button-group">
           <button>
             <a class="btn-edit" href="/edit-blog/{{this.id}}">Edit Post</a>
@@ -83,13 +84,14 @@
             <a class="btn-post" href="/delete-blog/{{this.id}}">Delete Blog</a>
           </button>
         </div>
+        {{/if}}
         <h1>
           <a href="/blog/{{this.id}}" target="_blank">
             {{this.title}}
           </a>
         </h1>
         <div class="detail-blog-content">
-          {{this.posted_at}} | {{this.author}}
+          {{this.posted_at}} | {{this.name}}
         </div>
         <p>
           {{this.content}}

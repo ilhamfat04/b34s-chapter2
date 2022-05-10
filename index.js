@@ -10,7 +10,8 @@ const flash = require('express-flash')
 const session = require('express-session')
 
 // import db connection
-const db = require('./connection/db')
+const db = require('./connection/db');
+const upload = require('./middlewares/uploadFile');
 
 // menggunakan package express
 const app = express()
@@ -20,6 +21,7 @@ app.set('view engine', 'hbs')
 
 // gunakan static folder
 app.use('/public', express.static(__dirname + '/public'))
+app.use('/uploads', express.static(__dirname + '/uploads'))
 // set body parser
 app.use(express.urlencoded({ extended: false }))
 
@@ -74,7 +76,22 @@ app.get('/contact-me', function (req, res) {
 })
 
 app.get('/blog', function (req, res) {
-    let query = `SELECT * FROM tb_blog ORDER BY id DESC`
+
+    let query = ''
+    if (req.session.isLogin) {
+        query = `SELECT name, image, author, tb_blog.id, title, content, posted_at 
+                        FROM tb_blog
+                        LEFT JOIN tb_user
+                        ON tb_user.id= tb_blog.author
+                        WHERE author=${req.session.user.id} 
+                        ORDER BY id DESC`
+    } else {
+        query = `SELECT name, image, author, tb_blog.id, title, content, posted_at 
+                        FROM tb_blog
+                        LEFT JOIN tb_user
+                        ON tb_user.id= tb_blog.author
+                        ORDER BY id DESC`
+    }
 
     db.connect((err, client, done) => {
         if (err) throw err
@@ -107,21 +124,22 @@ app.get('/add-blog', function (req, res) {
     res.render('form-blog')
 })
 
-app.post('/blog', function (req, res) {
+app.post('/blog', upload.single('image'), function (req, res) {
     let title = req.body.title
     let content = req.body.content
 
     let blog = {
         title: title,
         content: content,
-        image: 'image.png'
+        image: req.file.filename,
+        author: req.session.user.id
     }
 
     db.connect((err, client, done) => {
         if (err) throw err
 
-        let query = `INSERT INTO tb_blog(title, content, image) VALUES
-                        ('${blog.title}','${blog.content}','${blog.image}')`
+        let query = `INSERT INTO tb_blog(title, content, image, author) VALUES
+                        ('${blog.title}','${blog.content}','${blog.image}',${blog.author})`
         client.query(query, (err, result) => {
             done()
             if (err) throw err
